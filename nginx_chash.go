@@ -6,6 +6,7 @@ import (
 	"net"
 	"sort"
 	"strconv"
+	"unsafe"
 )
 
 const (
@@ -16,8 +17,8 @@ const (
 
 var (
 	//crc32Table  = crc32.MakeTable(crc32.IEEE)
-	littleEdian = 0 & int(1)
-	crc32Table  = []uint32{
+	//littleEdian = 0 & int(1)
+	crc32Table = []uint32{
 		0x00000000, 0x77073096, 0xee0e612c, 0x990951ba,
 		0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3,
 		0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
@@ -85,6 +86,11 @@ var (
 	}
 )
 
+func littleEdian() bool {
+	var i uint32 = 1
+	return (*[4]byte)(unsafe.Pointer(&i))[0] == 1
+}
+
 func NgxCrc32Long(s string, length int) uint32 {
 	bs := []byte(s)
 	c := initCrc32
@@ -123,6 +129,9 @@ func NgxCrc32Prev(c uint32, length int) []byte {
 	       u_char                            byte[4];
 	   } prev_hash;
 	*/
+	if littleEdian() {
+		return (*[4]byte)(unsafe.Pointer(&c))[:]
+	}
 	ph := make([]byte, length)
 	for i := 0; i < length; i++ {
 		ph[i] = byte((c >> (8 * uint32(i))) & 0xff)
